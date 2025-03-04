@@ -15,6 +15,7 @@ page_template = "essay.html"
 * [HATEOAS Is For Humans](https://intercoolerjs.org/2016/05/08/hatoeas-is-for-humans.html)
 * [Taking HTML Seriously](https://intercoolerjs.org/2020/01/14/taking-html-seriously)
 * [The #ViewSource Affordance](@/essays/right-click-view-source.md)
+* [How HTML with htmx Satisfies All Nine H-Factors](@/essays/h-factors.md)
 
 ### Why Hypermedia? Why Multi-Page Applications?
 * [Hypermedia On Whatever you'd Like (HOWL)](@/essays/hypermedia-on-whatever-youd-like.md)
