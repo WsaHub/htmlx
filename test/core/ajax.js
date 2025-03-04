@@ -1184,6 +1184,48 @@ describe('Core htmx AJAX Tests', function() {
     values.should.deep.equal({ t1: 'textValue', b1: ['inputValue', 'buttonValue'] })
   })
 
+  it('sends referenced form values when a button referencing another form is clicked', function() {
+    var values
+    this.server.respondWith('POST', '/test3', function(xhr) {
+      values = getParameters(xhr)
+      xhr.respond(205, {}, '')
+    })
+
+    make('<form id="externalForm" hx-post="/test">' +
+            '<input type="text" name="t1" value="textValue">' +
+            '<input type="hidden" name="b1" value="inputValue">' +
+            '</form>' +
+            '<form hx-post="/test2">' +
+            '<input type="text" name="t1" value="checkValue">' +
+            '<button id="submit" form="externalForm" hx-post="/test3" type="submit" name="b1" value="buttonValue">button</button>' +
+            '</form>')
+
+    byId('submit').click()
+    this.server.respond()
+    values.should.deep.equal({ t1: 'textValue', b1: ['inputValue', 'buttonValue'] })
+  })
+
+  it('sends referenced form values when a submit input referencing another form is clicked', function() {
+    var values
+    this.server.respondWith('POST', '/test3', function(xhr) {
+      values = getParameters(xhr)
+      xhr.respond(204, {}, '')
+    })
+
+    make('<form id="externalForm" hx-post="/test">' +
+            '<input type="text" name="t1" value="textValue">' +
+            '<input type="hidden" name="b1" value="inputValue">' +
+            '</form>' +
+            '<form hx-post="/test2">' +
+            '<input type="text" name="t1" value="checkValue">' +
+            '<input id="submit" form="externalForm" hx-post="/test3" type="submit" name="b1" value="buttonValue">' +
+            '</form>')
+
+    byId('submit').click()
+    this.server.respond()
+    values.should.deep.equal({ t1: 'textValue', b1: ['inputValue', 'buttonValue'] })
+  })
+
   it('properly handles inputs external to form', function() {
     var values
     this.server.respondWith('Post', '/test', function(xhr) {
@@ -1206,32 +1248,18 @@ describe('Core htmx AJAX Tests', function() {
     values.should.deep.equal({ t1: 'textValue', b1: ['inputValue', 'buttonValue'], s1: 'selectValue' })
   })
 
-  it('handles form post with button formmethod dialog properly', function() {
-    var values
+  it('properly handles buttons with formmethod=dialog', function() {
+    var request = false
     this.server.respondWith('POST', '/test', function(xhr) {
-      values = getParameters(xhr)
-      xhr.respond(200, {}, '')
+      request = true
+      xhr.respond(200, {}, '<button>Bar</button>')
     })
 
-    make('<dialog><form hx-post="/test"><button id="submit" formmethod="dialog" name="foo" value="bar">submit</button></form></dialog>')
+    make('<dialog><form hx-post="/test"><button id="submit" formmethod="dialog" name="foo" value="bar">Submit</button></form></dialog>')
 
     byId('submit').click()
     this.server.respond()
-    values.should.deep.equal({ foo: 'bar' })
-  })
-
-  it('handles form get with button formmethod dialog properly', function() {
-    var responded = false
-    this.server.respondWith('GET', '/test', function(xhr) {
-      responded = true
-      xhr.respond(200, {}, '')
-    })
-
-    make('<dialog><form hx-get="/test"><button id="submit" formmethod="dialog">submit</button></form></dialog>')
-
-    byId('submit').click()
-    this.server.respond()
-    responded.should.equal(true)
+    request.should.equal(false)
   })
 
   it('can associate submit buttons from outside a form with the current version of the form after swap', function() {
@@ -1261,5 +1289,41 @@ describe('Core htmx AJAX Tests', function() {
     button.click()
     this.server.respond()
     values.should.deep.equal({ name: '', outside: '' })
+  })
+
+  it('properly handles form reset behaviour with a htmx enabled reset button inside a form', function() {
+    var values
+    this.server.respondWith('POST', '/reset', function(xhr) {
+      values = getParameters(xhr)
+      xhr.respond(204, {}, '')
+    })
+
+    make('<form id="externalForm" hx-post="/test">' +
+            '<input id="t1" type="text" name="t1" value="defaultValue">' +
+            '<button hx-post="/reset" id="reset" type="reset" name="b1" value="buttonValue">reset</button>' +
+            '</form>')
+    byId('t1').value = 'otherValue'
+    byId('reset').click()
+    this.server.respond()
+    values.should.deep.equal({ b1: 'buttonValue', t1: 'otherValue' })
+    byId('t1').value.should.equal('defaultValue')
+  })
+
+  it('properly handles form reset behaviour with a htmx enabled reset button outside a form', function() {
+    var values
+    this.server.respondWith('POST', '/reset', function(xhr) {
+      values = getParameters(xhr)
+      xhr.respond(204, {}, '')
+    })
+
+    make('<form id="externalForm" hx-post="/test">' +
+            '<input id="t1" type="text" name="t1" value="defaultValue">' +
+            '</form>' +
+            '<button hx-post="/reset" id="reset" form="externalForm" type="reset" name="b1" value="buttonValue">reset</button>')
+    byId('t1').value = 'otherValue'
+    byId('reset').click()
+    this.server.respond()
+    values.should.deep.equal({ b1: 'buttonValue', t1: 'otherValue' })
+    byId('t1').value.should.equal('defaultValue')
   })
 })
